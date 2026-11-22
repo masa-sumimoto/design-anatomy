@@ -1,0 +1,23 @@
+{
+  "version": "0.1",
+  "summary": "カフェの夏季限定ドリンク告知バナー",
+  "source": { "path": "cafe-banner.png", "width": 1200, "height": 628, "type": "banner" },
+  "elements": [
+    { "id": "bg", "role": "background", "bbox": { "x": 0, "y": 0, "w": 1200, "h": 628 }, "content": "ベージュの単色", "style": { "background": "#F3E9DC" } },
+    { "id": "headline", "role": "headline", "bbox": { "x": 69, "y": 201, "w": 305, "h": 174 }, "lines": 2, "content": "ひんやり\n黒糖ラテ", "style": { "color": "#3B2A20", "fontFamilyGuess": "明朝体", "fontWeight": "800" }, "source": "ocr+vision" },
+    { "id": "visual", "role": "illustration", "bbox": { "x": 760, "y": 110, "w": 305, "h": 330 }, "content": "湯気の立つコーヒーカップのフラットイラスト", "source": "vision" },
+    { "id": "limited", "role": "label", "label": "Badge", "bbox": { "x": 72, "y": 150, "w": 108, "h": 38 }, "content": "夏季限定", "style": { "background": "#C8553D", "color": "#FFFFFF" }, "source": "ocr+vision" },
+    { "id": "body", "role": "body", "bbox": { "x": 74, "y": 404, "w": 330, "h": 68 }, "lines": 2, "content": "沖縄産黒糖のやさしい甘さ。\n8月31日までの期間限定です。", "source": "ocr" },
+    { "id": "price", "role": "price", "bbox": { "x": 888, "y": 480, "w": 195, "h": 42 }, "content": "¥580（税込）", "source": "ocr" },
+    { "id": "cta", "role": "cta", "bbox": { "x": 72, "y": 500, "w": 263, "h": 62 }, "content": "店舗で注文する →", "style": { "background": "#3B2A20", "color": "#F3E9DC" }, "source": "ocr+vision" },
+    { "id": "logo", "role": "logo", "bbox": { "x": 72, "y": 56, "w": 308, "h": 28 }, "content": "● MORNING ROAST", "source": "ocr" },
+    { "id": "circle", "role": "shape", "label": "Circle", "bbox": { "x": 640, "y": 40, "w": 560, "h": 588 }, "z": 0, "content": "ビジュアルを受ける淡いキャメルの大円（右端で裁ち落とし）", "confidence": 0.9, "source": "vision" }
+  ],
+  "palette": ["#F3E9DC", "#E7C9A9", "#3B2A20", "#8B5A3C", "#C8553D"],
+  "notes": [
+    "左にテキスト群、右にビジュアルの2カラム構成。テキストは x=72 の左揃えで縦に一直線",
+    "視線は 見出し → カップ → バッジ → 本文 → CTA と Z 字に流れる",
+    "見出しだけ明朝体で情緒を出し、他はゴシックで情報を整理している",
+    "アクセントの赤（#C8553D）は『夏季限定』バッジだけに使われ、限定感を強調"
+  ]
+}
