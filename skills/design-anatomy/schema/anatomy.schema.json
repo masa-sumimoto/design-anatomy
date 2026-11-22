@@ -30,12 +30,13 @@
           "role": {
             "enum": [
               "background",
-              "headline", "subheadline", "body", "caption", "price", "date", "label", "copy",
-              "illustration", "photo", "product", "icon", "character",
-              "cta", "button", "link",
+              "headline", "subheadline", "body", "caption", "price", "date", "label", "copy", "other-text",
+              "eyebrow", "heading", "info", "list", "note", "credit", "hashtag", "handle", "rating",
+              "illustration", "photo", "product", "icon", "character", "other-image", "qr", "avatar", "map",
+              "cta", "button", "link", "input", "chip",
               "logo",
               "badge", "decoration", "shape", "divider",
-              "frame", "container", "card", "nav",
+              "frame", "container", "card", "nav", "header", "statusbar", "tabbar",
               "other"
             ]
           },

@@ -36,25 +36,28 @@ node scripts/anatomy.mjs ocr <image>          # auto: macOS Vision → tesseract
 
 ### 3. Look and decide
 
-View the image yourself. For each meaningful element decide:
+View the image yourself and assign each meaningful element a **role**. Roles by group (full definitions and examples: `references/roles.md` — read it when unsure):
 
-| role | use for |
+| group | roles |
 |---|---|
-| `background` | the full-bleed base (color, photo, gradient). Usually one, covering the canvas. |
-| `headline` / `subheadline` / `body` / `caption` | text by hierarchy. The largest, most attention-grabbing copy is `headline`. |
-| `price` / `date` / `label` | text with a specific job (prices, dates/periods, small tags like "NEW"). |
-| `illustration` / `photo` / `product` / `character` / `icon` | imagery. Pick by how it was made and what it shows. |
-| `cta` / `button` / `link` | anything asking for action ("詳しくはこちら", "予約する"). |
-| `logo` | brand marks and wordmarks. |
-| `badge` / `decoration` / `shape` / `divider` | ornaments, ribbons, seals, lines, frames that carry no message by themselves. |
-| `container` / `card` / `frame` / `nav` | regions that group other elements (use `parent` on children). |
-| `other` | only if nothing above fits. |
+| Background | `background` |
+| Text | `headline` `subheadline` `eyebrow` `heading` `body` `list` `info` `price` `date` `label` `caption` `note` `credit` `hashtag` `handle` `rating` `copy` · `other-text` |
+| Image | `photo` `illustration` `product` `character` `icon` `avatar` `qr` `map` · `other-image` |
+| Action | `cta` `button` `link` `input` `chip` |
+| Brand | `logo` |
+| Decoration | `badge` `shape` `divider` `decoration` |
+| Container | `frame` `card` `container` `header` `nav` `statusbar` `tabbar` |
+| Fallback | `other` |
+
+**Can't decide?** Use `other-text` for text and `other-image` for imagery (`other` if even the group is unclear). They are drawn with a dashed outline so the user sees what is unresolved. Don't force a wrong role.
 
 Rules:
 - **Order `elements` by reading order** (where the eye goes first → last), with `background` first. The sheet numbers follow this order.
 - Text roles: `content` is the **exact visible text** (`\n` for line breaks). Never invent copy.
 - Image roles: `content` is a short description of what is depicted ("湯気の立つコーヒーカップのイラスト").
-- Prefer fewer, meaningful elements over many fragments (aim for 4–15).
+- Prefer fewer, meaningful elements over many fragments (aim for 4–15; UI screens may need up to ~20).
+- **Repeated components** (cards, list rows): break down the first instance with `parent`, then add the rest as single `card` elements whose `content` says "same structure as card1".
+- OCR misreads happen (dropped kanji, wrong star counts). Always check text against the image.
 - Put a `confidence` (0–1) on anything you're unsure about, and note uncertainties in `notes`.
 - Add 2–5 `notes` about the layout itself: grid/alignment, hierarchy, visual flow, whitespace — this is the design insight the user is after.
 
@@ -77,6 +80,16 @@ Save next to the image as `<image-name>.anatomy.json`. Schema: `schema/anatomy.s
 
 `source.path` is relative to the JSON file.
 
+### 4b. Check coverage (when OCR ran)
+
+Save the OCR output (e.g. `<image-name>.ocr.json`) and run:
+
+```bash
+node scripts/anatomy.mjs coverage <image-name>.anatomy.json <image-name>.ocr.json
+```
+
+It lists OCR lines that no element accounts for. Add them to the right element, or run with `--apply` to append them as `other-text`, then reclassify what you can.
+
 ### 5. Render and self-check
 
 ```bash
@@ -92,7 +105,11 @@ Then **look at the PNG** — panel A shows your boxes over the original. If boxe
 
 ### 6. Report
 
-Give the user: the sheet path, the element list (number · role · content), and your layout notes. Keep it short.
+Give the user, briefly:
+- **Size**: `width × height px` and aspect ratio (also printed on the sheet, e.g. `1080 × 1350 px · 4:5`).
+- The sheet path.
+- The element list (number · role · content), calling out any `other-*` elements as unresolved.
+- Your layout notes.
 
 ## Optional integrations
 

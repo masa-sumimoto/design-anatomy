@@ -4,6 +4,7 @@
 //   node anatomy.mjs probe  <image>                      -> {"width","height","format"}
 //   node anatomy.mjs ocr    <image> [--engine auto|vision|tesseract] [--lang jpn+eng]
 //                                                        -> {"engine","lines":[{text,bbox,conf}]}
+//   node anatomy.mjs coverage <anatomy.json> <ocr.json> [--apply]   -> OCR text no element accounts for
 //   node anatomy.mjs validate <anatomy.json>
 //   node anatomy.mjs render <anatomy.json> [--out file.svg] [--mode sheet|wireframe|overlay] [--png]
 //
@@ -150,12 +151,16 @@ export function ocr(file, { engine = "auto", lang = "jpn+eng" } = {}) {
 const ROLE_GROUP = {
   background: "background",
   headline: "text", subheadline: "text", body: "text", caption: "text",
-  price: "text", date: "text", label: "text", copy: "text",
-  illustration: "image", photo: "image", product: "image", icon: "image", character: "image",
-  cta: "action", button: "action", link: "action",
+  price: "text", date: "text", label: "text", copy: "text", "other-text": "text",
+  eyebrow: "text", heading: "text", info: "text", list: "text", note: "text", credit: "text",
+  hashtag: "text", handle: "text", rating: "text",
+  illustration: "image", photo: "image", product: "image", icon: "image", character: "image", "other-image": "image",
+  qr: "image", avatar: "image", map: "image",
+  cta: "action", button: "action", link: "action", input: "action", chip: "action",
   logo: "brand",
   badge: "decoration", decoration: "decoration", shape: "decoration", divider: "decoration",
   frame: "container", container: "container", card: "container", nav: "container",
+  header: "container", statusbar: "container", tabbar: "container",
 };
 
 const GROUP_STYLE = {
@@ -173,7 +178,9 @@ const FONT = `'Hiragino Sans','Noto Sans JP','Yu Gothic',system-ui,sans-serif`;
 const MONO = `ui-monospace,'SFMono-Regular',Menlo,monospace`;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const DISPLAY = { cta: "CTA", subheadline: "Sub headline" };
+const DISPLAY = { cta: "CTA", qr: "QR code", subheadline: "Sub headline", statusbar: "Status bar", tabbar: "Tab bar", "other-text": "Other text", "other-image": "Other image" };
+// "other-*" = recognised as text/image but its role couldn't be decided -> dashed outline.
+const isUnclassified = (el) => el.role === "other" || el.role?.startsWith("other-");
 const title = (s) => DISPLAY[s] ?? s.charAt(0).toUpperCase() + s.slice(1);
 const groupOf = (el) => ROLE_GROUP[el.role] ?? "other";
 const clip = (s, n) => { const a = [...String(s ?? "")]; return a.length > n ? a.slice(0, n - 1).join("") + "…" : a.join(""); };
@@ -193,6 +200,7 @@ function badge(n, x, y, color, r = 11) {
 // One element in wireframe style. (x,y,w,h) already scaled to the panel.
 function glyph(el, g, x, y, w, h) {
   const c = GROUP_STYLE[g].color;
+  const dash = isUnclassified(el) ? ` stroke-dasharray="5 3"` : "";
   const out = [];
   if (g === "background") {
     out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="#EFEFF3"/>`);
@@ -203,7 +211,7 @@ function glyph(el, g, x, y, w, h) {
     const pad = Math.min(4, h * 0.1);
     const slot = (h - pad * 2) / n;
     const bar = Math.max(2, slot * (el.role === "headline" ? 0.5 : 0.38));
-    out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="#fff" fill-opacity=".55" stroke="${c}" stroke-width="1.5"/>`);
+    out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="#fff" fill-opacity=".55" stroke="${c}" stroke-width="1.5"${dash}/>`);
     for (let i = 0; i < n; i++) {
       const bw = i === n - 1 && n > 1 ? w * 0.62 : w - pad * 2;
       const by = y + pad + slot * i + (slot - bar) / 2;
@@ -212,7 +220,7 @@ function glyph(el, g, x, y, w, h) {
     return out.join("");
   }
   if (g === "image") {
-    out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="#E3E3E8" stroke="${c}" stroke-width="1.5"/>`);
+    out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="#E3E3E8" stroke="${c}" stroke-width="1.5"${dash}/>`);
     out.push(`<path d="M${r1(x)} ${r1(y)}L${r1(x + w)} ${r1(y + h)}M${r1(x + w)} ${r1(y)}L${r1(x)} ${r1(y + h)}" stroke="#B9B9C2" stroke-width="1"/>`);
     return out.join("");
   }
@@ -235,6 +243,13 @@ function glyph(el, g, x, y, w, h) {
     out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="${c}" fill-opacity=".06" stroke="${c}" stroke-width="1.5" stroke-dasharray="6 4"/>`);
     return out.join("");
   }
+  if (el.role === "badge") {
+    const rx = Math.min(w, h) / 2;
+    out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${r1(rx)}" fill="${c}" fill-opacity=".22" stroke="${c}" stroke-width="1.5"/>`);
+    const bar = Math.max(2, Math.min(h * 0.18, 10));
+    out.push(`<rect x="${r1(x + w * 0.22)}" y="${r1(y + (h - bar) / 2)}" width="${r1(w * 0.56)}" height="${r1(bar)}" rx="${r1(bar / 2)}" fill="${c}" fill-opacity=".7"/>`);
+    return out.join("");
+  }
   // decoration / other
   out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="none" stroke="${c}" stroke-width="1.5" stroke-dasharray="3 3"/>`);
   return out.join("");
@@ -248,12 +263,27 @@ function cornerBadge(el, ox, oy, s, pw, ph) {
   return { x, y };
 }
 
+// Containers sit between the background and the content so their tint never covers content.
+const DEFAULT_Z = { background: -2, container: -1 };
+
+// Nudge marker badges that would land on top of each other (e.g. background + frame corners).
+function placeBadges(items) {
+  const placed = [];
+  for (const it of items) {
+    let { x, y } = it;
+    while (placed.some((p) => Math.hypot(p.x - x, p.y - y) < 22)) x += 24;
+    placed.push({ x, y });
+    it.x = x; it.y = y;
+  }
+  return items;
+}
+
 function ordered(elements) {
   // number in reading order (array order), draw in z order (background first)
   const numbered = elements.map((el, i) => ({ ...el, n: i + 1 }));
   const drawOrder = [...numbered].sort((a, b) => {
-    const za = a.z ?? (groupOf(a) === "background" ? -1 : 0);
-    const zb = b.z ?? (groupOf(b) === "background" ? -1 : 0);
+    const za = a.z ?? DEFAULT_Z[groupOf(a)] ?? 0;
+    const zb = b.z ?? DEFAULT_Z[groupOf(b)] ?? 0;
     return za - zb || a.n - b.n;
   });
   return { numbered, drawOrder };
@@ -267,9 +297,9 @@ function panelWireframe(doc, ox, oy, s, { tags = false } = {}) {
     const { x, y, w, h } = el.bbox;
     parts.push(glyph(el, groupOf(el), ox + x * s, oy + y * s, w * s, h * s));
   }
-  for (const el of drawOrder) {
+  const marks = placeBadges(drawOrder.map((el) => ({ el, ...cornerBadge(el, ox, oy, s, W * s, H * s) })));
+  for (const { el, x: bx, y: by } of marks) {
     const g = groupOf(el);
-    const { x: bx, y: by } = cornerBadge(el, ox, oy, s, W * s, H * s);
     parts.push(badge(el.n, bx, by, GROUP_STYLE[g].color));
     const tag = el.label ?? title(el.role);
     if (tags && el.bbox.w * s > 90) {
@@ -292,13 +322,10 @@ function panelOverlay(doc, ox, oy, s, href) {
     const g = groupOf(el);
     if (g === "background") continue;
     const { x, y, w, h } = el.bbox;
-    parts.push(`<rect x="${r1(ox + x * s)}" y="${r1(oy + y * s)}" width="${r1(w * s)}" height="${r1(h * s)}" fill="none" stroke="${GROUP_STYLE[g].color}" stroke-width="2"/>`);
+    parts.push(`<rect x="${r1(ox + x * s)}" y="${r1(oy + y * s)}" width="${r1(w * s)}" height="${r1(h * s)}" fill="none" stroke="${GROUP_STYLE[g].color}" stroke-width="2"${isUnclassified(el) ? ` stroke-dasharray="5 3"` : ""}/>`);
   }
-  for (const el of drawOrder) {
-    const g = groupOf(el);
-    const { x, y } = cornerBadge(el, ox, oy, s, W * s, H * s);
-    parts.push(badge(el.n, x, y, GROUP_STYLE[g].color));
-  }
+  const marks = placeBadges(drawOrder.map((el) => ({ el, ...cornerBadge(el, ox, oy, s, W * s, H * s) })));
+  for (const { el, x, y } of marks) parts.push(badge(el.n, x, y, GROUP_STYLE[groupOf(el)].color));
   return parts.join("\n");
 }
 
@@ -325,6 +352,28 @@ function legend(doc, ox, oy, width) {
   return { svg: parts.join("\n"), height: perCol * rowH };
 }
 
+export function aspect(w, h) {
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const g = gcd(w, h);
+  if (w / g <= 32 && h / g <= 32) return `${w / g}:${h / g}`;
+  return w >= h ? `${(w / h).toFixed(2)}:1` : `1:${(h / w).toFixed(2)}`;
+}
+
+// Spec-style dimension lines: width under the panel, height on its left.
+function dimensions(W, H, ox, oy, pw, ph) {
+  const c = "#8C8C96", t = 4;
+  const by = oy + ph + 16, lx = ox - 16;
+  const font = `font-family="${MONO}" font-size="10" fill="${c}"`;
+  return [
+    `<path d="M${ox} ${by - t}V${by + t}M${r1(ox + pw)} ${by - t}V${by + t}M${ox} ${by}H${r1(ox + pw)}" stroke="${c}"/>`,
+    `<rect x="${r1(ox + pw / 2 - 30)}" y="${by - 7}" width="60" height="14" fill="#fff"/>`,
+    `<text x="${r1(ox + pw / 2)}" y="${by + 3.5}" text-anchor="middle" ${font}>${W} px</text>`,
+    `<path d="M${lx - t} ${oy}H${lx + t}M${lx - t} ${r1(oy + ph)}H${lx + t}M${lx} ${oy}V${r1(oy + ph)}" stroke="${c}"/>`,
+    `<rect x="${lx - 7}" y="${r1(oy + ph / 2 - 30)}" width="14" height="60" fill="#fff"/>`,
+    `<text transform="translate(${lx + 3.5} ${r1(oy + ph / 2)}) rotate(-90)" text-anchor="middle" ${font}>${H} px</text>`,
+  ].join("");
+}
+
 export function render(doc, { mode = "sheet", imagePath } = {}) {
   const { width: W, height: H } = doc.source;
   const href = imagePath && existsSync(imagePath) ? imageDataUri(imagePath) : null;
@@ -340,7 +389,7 @@ export function render(doc, { mode = "sheet", imagePath } = {}) {
   const pw = W * s, ph = H * s;
   const sheetW = Math.round(M * 2 + pw * 2 + GAP);
   const lg = legend(doc, M, 0, sheetW - M * 2);
-  const legendY = M + HEAD + ph + 56;
+  const legendY = M + HEAD + ph + 72;
   const sheetH = Math.round(legendY + lg.height + M);
 
   const groupsUsed = [...new Set(doc.elements.map(groupOf))];
@@ -354,7 +403,8 @@ export function render(doc, { mode = "sheet", imagePath } = {}) {
   }).join("");
 
   const name = doc.source.path ? basename(doc.source.path) : "untitled";
-  const meta = `${name} · ${W}×${H}px · ${doc.source.type ?? "design"} · ${doc.elements.length} elements`;
+  const meta = `${name} · ${doc.source.type ?? "design"} · ${doc.elements.length} elements`;
+  const size = `${W} × ${H} px  ·  ${aspect(W, H)}`;
   const labelY = M + HEAD - 12;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${sheetW}" height="${sheetH}" viewBox="0 0 ${sheetW} ${sheetH}">
@@ -364,8 +414,10 @@ export function render(doc, { mode = "sheet", imagePath } = {}) {
 <text x="${M}" y="${M + 56}" font-family="${MONO}" font-size="11" fill="#8C8C96">${esc(meta)}</text>
 ${chips}
 <text x="${M}" y="${labelY}" font-family="${MONO}" font-size="10" letter-spacing="1.5" fill="#8C8C96">A — SOURCE</text>
+<text x="${r1(M + pw)}" y="${labelY}" text-anchor="end" font-family="${MONO}" font-size="12" font-weight="700" fill="#1C1C22">${size}</text>
 <text x="${r1(M + pw + GAP)}" y="${labelY}" font-family="${MONO}" font-size="10" letter-spacing="1.5" fill="#8C8C96">B — WIREFRAME</text>
 ${panelOverlay(doc, M, M + HEAD, s, href)}
+${dimensions(W, H, M, M + HEAD, pw, ph)}
 ${panelWireframe(doc, r1(M + pw + GAP), M + HEAD, s)}
 <text x="${M}" y="${legendY - 18}" font-family="${MONO}" font-size="10" letter-spacing="1.5" fill="#8C8C96">C — ELEMENTS (reading order)</text>
 ${shiftY(lg.svg, legendY)}
@@ -405,6 +457,31 @@ export function rasterize(svgPath, pngPath) {
     return pngPath;
   }
   die("no rasterizer found (install librsvg or Chrome), or open the SVG in a browser.");
+}
+
+// ---------------------------------------------------------------------------
+// coverage: OCR lines that no element accounts for -> candidates for "other-text"
+// ---------------------------------------------------------------------------
+function overlapRatio(a, b) {
+  const x = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const y = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  return (x * y) / (a.w * a.h || 1); // share of OCR box `a` inside element `b`
+}
+
+export function coverage(doc, ocrResult, { threshold = 0.6 } = {}) {
+  // An element "holds" text unless it is the background, a whole-canvas frame, or a parent
+  // whose children carry the text. (Otherwise a frame would "cover" every line and hide misses.)
+  const parents = new Set(doc.elements.map((el) => el.parent).filter(Boolean));
+  const holders = doc.elements.filter((el) =>
+    groupOf(el) !== "background" && el.role !== "frame" && !parents.has(el.id));
+  const uncovered = [];
+  let covered = 0;
+  for (const line of ocrResult.lines ?? []) {
+    if (!line.text?.trim()) continue;
+    const hit = holders.some((el) => overlapRatio(line.bbox, el.bbox) >= threshold);
+    if (hit) covered++; else uncovered.push(line);
+  }
+  return { covered, uncovered };
 }
 
 // ---------------------------------------------------------------------------
@@ -456,6 +533,20 @@ if (isMain) {
     writeFileSync(out, svg);
     process.stdout.write(out + "\n");
     if (opt.png) process.stdout.write(rasterize(out, out.replace(/\.svg$/i, ".png")) + "\n");
+  } else if (cmd === "coverage") {
+    if (!pos[1]) die("usage: coverage <anatomy.json> <ocr.json> [--apply]");
+    const doc = JSON.parse(readFileSync(pos[0], "utf8"));
+    const res = coverage(doc, JSON.parse(readFileSync(pos[1], "utf8")));
+    process.stdout.write(`covered: ${res.covered}, uncovered: ${res.uncovered.length}\n`);
+    res.uncovered.forEach((l) => process.stdout.write(`  - "${l.text}" @ ${JSON.stringify(l.bbox)}\n`));
+    if (opt.apply && res.uncovered.length) {
+      res.uncovered.forEach((l, i) => doc.elements.push({
+        id: `other-text-${i + 1}`, role: "other-text", bbox: l.bbox, content: l.text,
+        confidence: l.conf, source: "ocr",
+      }));
+      writeFileSync(pos[0], JSON.stringify(doc, null, 2) + "\n");
+      process.stdout.write(`appended ${res.uncovered.length} other-text element(s) to ${pos[0]}\n`);
+    }
   } else if (cmd === "validate") {
     const doc = JSON.parse(readFileSync(pos[0], "utf8"));
     const { errs, warn } = validate(doc);
@@ -464,6 +555,6 @@ if (isMain) {
     process.stdout.write(errs.length ? "invalid\n" : "ok\n");
     process.exit(errs.length ? 1 : 0);
   } else {
-    die("commands: probe | ocr | validate | render");
+    die("commands: probe | ocr | coverage | validate | render");
   }
 }

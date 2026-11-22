@@ -44,7 +44,8 @@ Or run the script directly:
 ```bash
 S=skills/design-anatomy/scripts/anatomy.mjs
 node $S probe banner.png
-node $S ocr banner.png
+node $S ocr banner.png > banner.ocr.json
+node $S coverage banner.anatomy.json banner.ocr.json   # OCR text no element covers
 node $S validate banner.anatomy.json
 node $S render banner.anatomy.json --png                 # sheet
 node $S render banner.anatomy.json --mode wireframe --png
@@ -52,9 +53,20 @@ node $S render banner.anatomy.json --mode wireframe --png
 
 ## Roles / 役割
 
-`background` · `headline` `subheadline` `body` `caption` `price` `date` `label` · `illustration` `photo` `product` `character` `icon` · `cta` `button` `link` · `logo` · `badge` `decoration` `shape` `divider` · `container` `card` `frame` `nav` · `other`
+| group | roles |
+|---|---|
+| Background | `background` |
+| Text | `headline` `subheadline` `eyebrow` `heading` `body` `list` `info` `price` `date` `label` `caption` `note` `credit` `hashtag` `handle` `rating` `copy` · `other-text` |
+| Image | `photo` `illustration` `product` `character` `icon` `avatar` `qr` `map` · `other-image` |
+| Action | `cta` `button` `link` `input` `chip` |
+| Brand | `logo` |
+| Decoration | `badge` `shape` `divider` `decoration` |
+| Container | `frame` `card` `container` `header` `nav` `statusbar` `tabbar` |
 
-Each role belongs to a color group (Text / Image / Action / Brand / Decoration / Container) used in the sheet.
+Elements the agent can't classify become `other-text` / `other-image` (dashed outline). `coverage` flags OCR text that no element accounts for.
+分類できない要素は `other-text` / `other-image`（破線）になり、`coverage` が拾い漏れた文字を検出します。
+
+Definitions: [references/roles.md](skills/design-anatomy/references/roles.md)
 
 ## License
 
