@@ -1,6 +1,6 @@
 # design-anatomy
 
-> An agent skill that turns a flat design image into an **anatomy sheet** — numbered markers on the original, a wireframe redraw, and an element list, in one image.
+> An agent skill that turns a flat design image into an **anatomy sheet** (numbered markers, wireframe, element list, palette), a **content spec** (size + type/value pairs), and a **taste prompt** (the look & feel with all copy and layout stripped).
 >
 > バナーやポスターなどのデザイン画像を、背景・見出し・サブコピー・イラスト・CTA などの要素に分解して、**1枚の図版（anatomy 図）** にするエージェント用 skill です。
 
@@ -16,7 +16,9 @@ Works with any agent that reads the [Agent Skills](https://agentskills.io) `SKIL
 | OCR | script | text lines + pixel boxes (`ocr`: macOS Vision → tesseract) |
 | understand | **agent** | decide each element's role, reading order, and content by looking at the image |
 | write | agent | `<image>.anatomy.json` ([schema](skills/design-anatomy/schema/anatomy.schema.json)) |
+| taste | **agent** | describe the look without words or layout → `taste` in the JSON |
 | draw | script | SVG/PNG sheet (`render`) |
+| brief | script | `<image>.content.yaml` + `<image>.taste.md` (`brief`) |
 
 The agent does the judgement; a zero-dependency Node script does the deterministic parts.
 判断はエージェント、計測・OCR・描画は依存ゼロの Node スクリプト、という分担です。
@@ -49,7 +51,18 @@ node $S coverage banner.anatomy.json banner.ocr.json   # OCR text no element cov
 node $S validate banner.anatomy.json
 node $S render banner.anatomy.json --png                 # sheet
 node $S render banner.anatomy.json --mode wireframe --png
+node $S brief banner.anatomy.json                        # content.yaml + taste.md
 ```
+
+## Outputs / 出力
+
+| file | what | use it for |
+|---|---|---|
+| `*.anatomy.png` | one-sheet diagram | understanding the structure at a glance |
+| `*.content.yaml` | size + `type`/`value` pairs | briefs, copy decks, design specs |
+| `*.taste.md` | taste prompt (EN/JA), palette, facets, asset prompts, negative | style references, mood boards, image generation |
+
+See [examples/](examples/) for a full set.
 
 ## Roles / 役割
 

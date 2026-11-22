@@ -72,6 +72,36 @@
       }
     },
     "palette": { "type": "array", "items": { "type": "string" }, "description": "Dominant colors (hex)." },
-    "notes": { "type": "array", "items": { "type": "string" }, "description": "Layout observations: grid, hierarchy, visual flow, uncertainties." }
+    "notes": { "type": "array", "items": { "type": "string" }, "description": "Layout observations: grid, hierarchy, visual flow, uncertainties." },
+    "taste": {
+      "type": "object",
+      "description": "The look & feel with all text content, element counts and positions stripped — reusable as a generation prompt for a new design in the same taste.",
+      "properties": {
+        "prompt": { "type": "string", "description": "English prompt describing the taste only." },
+        "prompt_ja": { "type": "string", "description": "Japanese version of the prompt." },
+        "keywords": { "type": "array", "items": { "type": "string" } },
+        "palette": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["hex"],
+            "properties": { "hex": { "type": "string" }, "name": { "type": "string" }, "use": { "type": "string" } }
+          }
+        },
+        "typography": { "type": "string", "description": "Character of the type (classification, weight, contrast, feel) — never the words." },
+        "imagery": { "type": "string", "description": "Medium and style of photos/illustrations." },
+        "texture": { "type": "string", "description": "Surface, finish, grain, print feel." },
+        "mood": { "type": "string" },
+        "references": { "type": "array", "items": { "type": "string" }, "description": "Eras, movements, genres, media the taste evokes." },
+        "assets": {
+          "type": "array",
+          "description": "Per-visual generation prompts (text-free), e.g. for an image model.",
+          "items": {
+            "type": "object", "required": ["prompt"],
+            "properties": { "target": { "type": "string", "description": "Element id or role." }, "prompt": { "type": "string" } }
+          }
+        },
+        "negative": { "type": "string", "description": "What to avoid to stay in this taste." }
+      }
+    }
   }
 }

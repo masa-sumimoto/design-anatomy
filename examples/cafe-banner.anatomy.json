@@ -1,23 +1,210 @@
 {
   "version": "0.1",
   "summary": "カフェの夏季限定ドリンク告知バナー",
-  "source": { "path": "cafe-banner.png", "width": 1200, "height": 628, "type": "banner" },
+  "source": {
+    "path": "cafe-banner.png",
+    "width": 1200,
+    "height": 628,
+    "type": "banner"
+  },
   "elements": [
-    { "id": "bg", "role": "background", "bbox": { "x": 0, "y": 0, "w": 1200, "h": 628 }, "content": "ベージュの単色", "style": { "background": "#F3E9DC" } },
-    { "id": "headline", "role": "headline", "bbox": { "x": 69, "y": 201, "w": 305, "h": 174 }, "lines": 2, "content": "ひんやり\n黒糖ラテ", "style": { "color": "#3B2A20", "fontFamilyGuess": "明朝体", "fontWeight": "800" }, "source": "ocr+vision" },
-    { "id": "visual", "role": "illustration", "bbox": { "x": 760, "y": 110, "w": 305, "h": 330 }, "content": "湯気の立つコーヒーカップのフラットイラスト", "source": "vision" },
-    { "id": "limited", "role": "label", "label": "Badge", "bbox": { "x": 72, "y": 150, "w": 108, "h": 38 }, "content": "夏季限定", "style": { "background": "#C8553D", "color": "#FFFFFF" }, "source": "ocr+vision" },
-    { "id": "body", "role": "body", "bbox": { "x": 74, "y": 404, "w": 330, "h": 68 }, "lines": 2, "content": "沖縄産黒糖のやさしい甘さ。\n8月31日までの期間限定です。", "source": "ocr" },
-    { "id": "price", "role": "price", "bbox": { "x": 888, "y": 480, "w": 195, "h": 42 }, "content": "¥580（税込）", "source": "ocr" },
-    { "id": "cta", "role": "cta", "bbox": { "x": 72, "y": 500, "w": 263, "h": 62 }, "content": "店舗で注文する →", "style": { "background": "#3B2A20", "color": "#F3E9DC" }, "source": "ocr+vision" },
-    { "id": "logo", "role": "logo", "bbox": { "x": 72, "y": 56, "w": 308, "h": 28 }, "content": "● MORNING ROAST", "source": "ocr" },
-    { "id": "circle", "role": "shape", "label": "Circle", "bbox": { "x": 640, "y": 40, "w": 560, "h": 588 }, "z": 0, "content": "ビジュアルを受ける淡いキャメルの大円（右端で裁ち落とし）", "confidence": 0.9, "source": "vision" }
+    {
+      "id": "bg",
+      "role": "background",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "w": 1200,
+        "h": 628
+      },
+      "content": "ベージュの単色",
+      "style": {
+        "background": "#F3E9DC"
+      }
+    },
+    {
+      "id": "headline",
+      "role": "headline",
+      "bbox": {
+        "x": 69,
+        "y": 201,
+        "w": 305,
+        "h": 174
+      },
+      "lines": 2,
+      "content": "ひんやり\n黒糖ラテ",
+      "style": {
+        "color": "#3B2A20",
+        "fontFamilyGuess": "明朝体",
+        "fontWeight": "800"
+      },
+      "source": "ocr+vision"
+    },
+    {
+      "id": "visual",
+      "role": "illustration",
+      "bbox": {
+        "x": 760,
+        "y": 110,
+        "w": 305,
+        "h": 330
+      },
+      "content": "湯気の立つコーヒーカップのフラットイラスト",
+      "source": "vision"
+    },
+    {
+      "id": "limited",
+      "role": "label",
+      "label": "Badge",
+      "bbox": {
+        "x": 72,
+        "y": 150,
+        "w": 108,
+        "h": 38
+      },
+      "content": "夏季限定",
+      "style": {
+        "background": "#C8553D",
+        "color": "#FFFFFF"
+      },
+      "source": "ocr+vision"
+    },
+    {
+      "id": "body",
+      "role": "body",
+      "bbox": {
+        "x": 74,
+        "y": 404,
+        "w": 330,
+        "h": 68
+      },
+      "lines": 2,
+      "content": "沖縄産黒糖のやさしい甘さ。\n8月31日までの期間限定です。",
+      "source": "ocr"
+    },
+    {
+      "id": "price",
+      "role": "price",
+      "bbox": {
+        "x": 888,
+        "y": 480,
+        "w": 195,
+        "h": 42
+      },
+      "content": "¥580（税込）",
+      "source": "ocr"
+    },
+    {
+      "id": "cta",
+      "role": "cta",
+      "bbox": {
+        "x": 72,
+        "y": 500,
+        "w": 263,
+        "h": 62
+      },
+      "content": "店舗で注文する →",
+      "style": {
+        "background": "#3B2A20",
+        "color": "#F3E9DC"
+      },
+      "source": "ocr+vision"
+    },
+    {
+      "id": "logo",
+      "role": "logo",
+      "bbox": {
+        "x": 72,
+        "y": 56,
+        "w": 308,
+        "h": 28
+      },
+      "content": "● MORNING ROAST",
+      "source": "ocr"
+    },
+    {
+      "id": "circle",
+      "role": "shape",
+      "label": "Circle",
+      "bbox": {
+        "x": 640,
+        "y": 40,
+        "w": 560,
+        "h": 588
+      },
+      "z": 0,
+      "content": "ビジュアルを受ける淡いキャメルの大円（右端で裁ち落とし）",
+      "confidence": 0.9,
+      "source": "vision"
+    }
   ],
-  "palette": ["#F3E9DC", "#E7C9A9", "#3B2A20", "#8B5A3C", "#C8553D"],
+  "palette": [
+    "#F3E9DC",
+    "#E7C9A9",
+    "#3B2A20",
+    "#8B5A3C",
+    "#C8553D"
+  ],
   "notes": [
     "左にテキスト群、右にビジュアルの2カラム構成。テキストは x=72 の左揃えで縦に一直線",
     "視線は 見出し → カップ → バッジ → 本文 → CTA と Z 字に流れる",
     "見出しだけ明朝体で情緒を出し、他はゴシックで情報を整理している",
     "アクセントの赤（#C8553D）は『夏季限定』バッジだけに使われ、限定感を強調"
-  ]
+  ],
+  "taste": {
+    "prompt": "Warm minimal café promotion in a modern Japanese 'kissaten meets specialty coffee' style. Soft oat-beige ground with a large, pale caramel circle as a backdrop motif. Flat vector illustration built from simple rounded geometric shapes — no outlines, no gradients, no shadows. High-contrast Mincho serif for the hero copy paired with a clean geometric gothic sans for supporting text, all in deep espresso brown. One small tomato-red accent used sparingly, rounded pill-shaped buttons. Calm, cozy and quietly premium; generous negative space, matte print-like finish.",
+    "prompt_ja": "モダンな和の「喫茶×スペシャルティコーヒー」をイメージした、温かみのあるミニマルなカフェ告知。オートミールのような淡いベージュの地に、淡いキャラメル色の大きな円をモチーフとして敷く。イラストは丸みのある単純な図形で組んだフラットベクター（線なし・グラデーションなし・影なし）。主役のコピーはコントラストの強い明朝体、補足は端正な幾何学系ゴシック。文字色はすべて深いエスプレッソブラウン。差し色はトマトレッドを一点だけ控えめに。ボタンは角丸のピル型。穏やかで居心地がよく、静かに上質。余白を広くとり、マットな印刷物のような質感で。",
+    "keywords": [
+      "ウォームミニマル",
+      "フラットベクター",
+      "喫茶×スペシャルティ",
+      "明朝×ゴシック",
+      "一点だけの差し色",
+      "マットな質感",
+      "余白多め"
+    ],
+    "palette": [
+      {
+        "hex": "#F3E9DC",
+        "name": "オートベージュ",
+        "use": "地"
+      },
+      {
+        "hex": "#E7C9A9",
+        "name": "キャラメルミルク",
+        "use": "背景モチーフ"
+      },
+      {
+        "hex": "#3B2A20",
+        "name": "エスプレッソ",
+        "use": "文字・ボタン"
+      },
+      {
+        "hex": "#8B5A3C",
+        "name": "カフェオレ",
+        "use": "イラストの陰影色"
+      },
+      {
+        "hex": "#C8553D",
+        "name": "トマトレッド",
+        "use": "差し色（ごく少量）"
+      }
+    ],
+    "typography": "主役は太めでコントラストの強い明朝体（和の情緒）。補足とボタンは字間をやや広げた幾何学系ゴシック。英字のロゴタイプはワイドなサンセリフの大文字で字間広め。",
+    "imagery": "線のないフラットベクター。丸・角丸・帯だけで物を描く記号的なイラスト。立体感は2色の面の切り替えだけで表現。",
+    "texture": "マットでフラット。光沢・グレイン・ノイズなし。",
+    "mood": "穏やか、温かい、季節の楽しみ、手の届く上質さ",
+    "references": [
+      "和モダンのカフェブランディング",
+      "2020年代の D2C フラットイラスト",
+      "北欧ミニマル"
+    ],
+    "assets": [
+      {
+        "target": "visual (illustration)",
+        "prompt": "Flat vector illustration of a steaming coffee cup: rounded white bowl with a band of milk-coffee brown at the rim, loop handle, three soft rounded steam strokes. Built from simple geometric shapes, no outlines, no shadows, no gradients. Warm café palette (#FFFFFF, #8B5A3C, cream). Isolated on a transparent background, no text."
+      }
+    ],
+    "negative": "photorealism, glossy 3D, drop shadows, gradients, neon or saturated colors, outlined cartoon style, busy patterns, multiple accent colors, any text or letters inside generated images"
+  }
 }

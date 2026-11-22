@@ -1,0 +1,31 @@
+# design-anatomy content — cafe-banner.png
+source:
+  size: 1200x628
+  width: 1200
+  height: 628
+  aspect: "1.91:1"
+  type: banner
+content:  # reading order
+  - type: headline
+    value: |
+      ひんやり
+      黒糖ラテ
+  - type: label  # Badge
+    value: "夏季限定"
+  - type: body
+    value: |
+      沖縄産黒糖のやさしい甘さ。
+      8月31日までの期間限定です。
+  - type: price
+    value: "¥580（税込）"
+  - type: cta
+    value: "店舗で注文する →"
+  - type: logo
+    value: "● MORNING ROAST"
+visuals:
+  - type: background
+    value: "ベージュの単色"
+  - type: illustration
+    value: "湯気の立つコーヒーカップのフラットイラスト"
+  - type: shape
+    value: "ビジュアルを受ける淡いキャメルの大円（右端で裁ち落とし）"

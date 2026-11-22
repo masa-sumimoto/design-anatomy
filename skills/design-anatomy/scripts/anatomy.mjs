@@ -5,6 +5,7 @@
 //   node anatomy.mjs ocr    <image> [--engine auto|vision|tesseract] [--lang jpn+eng]
 //                                                        -> {"engine","lines":[{text,bbox,conf}]}
 //   node anatomy.mjs coverage <anatomy.json> <ocr.json> [--apply]   -> OCR text no element accounts for
+//   node anatomy.mjs brief    <anatomy.json>   -> <name>.content.yaml + <name>.taste.md
 //   node anatomy.mjs validate <anatomy.json>
 //   node anatomy.mjs render <anatomy.json> [--out file.svg] [--mode sheet|wireframe|overlay] [--png]
 //
@@ -390,7 +391,9 @@ export function render(doc, { mode = "sheet", imagePath } = {}) {
   const sheetW = Math.round(M * 2 + pw * 2 + GAP);
   const lg = legend(doc, M, 0, sheetW - M * 2);
   const legendY = M + HEAD + ph + 72;
-  const sheetH = Math.round(legendY + lg.height + M);
+  const tasteY = legendY + lg.height + 56;
+  const ts = tasteStrip(doc, M, tasteY, sheetW - M * 2);
+  const sheetH = Math.round((ts.height ? tasteY + ts.height : legendY + lg.height) + M);
 
   const groupsUsed = [...new Set(doc.elements.map(groupOf))];
   let cx = sheetW - M;
@@ -421,8 +424,106 @@ ${dimensions(W, H, M, M + HEAD, pw, ph)}
 ${panelWireframe(doc, r1(M + pw + GAP), M + HEAD, s)}
 <text x="${M}" y="${legendY - 18}" font-family="${MONO}" font-size="10" letter-spacing="1.5" fill="#8C8C96">C — ELEMENTS (reading order)</text>
 ${shiftY(lg.svg, legendY)}
+${ts.height ? `<text x="${M}" y="${tasteY - 18}" font-family="${MONO}" font-size="10" letter-spacing="1.5" fill="#8C8C96">D — TASTE (palette · keywords)</text>\n${ts.svg}` : ""}
 </svg>
 `;
+}
+
+const textW = (str, size) => [...String(str)].reduce((n, ch) => n + (CJK.test(ch) ? size : size * 0.58), 0);
+
+// Palette swatches + taste keywords. Empty when the anatomy has no taste/palette.
+function tasteStrip(doc, ox, oy, width) {
+  const t = doc.taste ?? {};
+  const pal = t.palette?.length ? t.palette : (doc.palette ?? []).map((hex) => ({ hex }));
+  const kws = t.keywords ?? [];
+  if (!pal.length && !kws.length) return { svg: "", height: 0 };
+  const parts = [];
+  let y = oy;
+  if (pal.length) {
+    const step = Math.min(120, width / pal.length);
+    pal.forEach((p, i) => {
+      const x = ox + i * step;
+      parts.push(`<rect x="${r1(x)}" y="${y}" width="${r1(step - 16)}" height="40" rx="6" fill="${esc(p.hex)}" stroke="#E4E4EA"/>`);
+      parts.push(`<text x="${r1(x)}" y="${y + 58}" font-family="${MONO}" font-size="10" fill="#55555E">${esc(p.hex)}</text>`);
+      if (p.name) parts.push(`<text x="${r1(x)}" y="${y + 74}" font-family="${FONT}" font-size="11" fill="#8C8C96">${esc(clip(p.name, Math.floor((step - 16) / 7)))}</text>`);
+    });
+    y += pal.some((p) => p.name) ? 96 : 76;
+  }
+  let x = ox;
+  for (const k of kws) {
+    const w = textW(k, 12) + 22;
+    if (x + w > ox + width) { x = ox; y += 32; }
+    parts.push(`<rect x="${r1(x)}" y="${y}" width="${r1(w)}" height="24" rx="12" fill="#F2F2F5"/>`);
+    parts.push(`<text x="${r1(x + 11)}" y="${y + 16}" font-family="${FONT}" font-size="12" fill="#3A3A42">${esc(k)}</text>`);
+    x += w + 8;
+  }
+  if (kws.length) y += 24;
+  return { svg: parts.join("\n"), height: y - oy };
+}
+
+// ---------------------------------------------------------------------------
+// brief: copy-paste outputs
+//   <name>.content.yaml — size + type/value pairs in reading order
+//   <name>.taste.md     — the taste prompt (text, counts and positions stripped)
+// ---------------------------------------------------------------------------
+const CONTENT_GROUPS = new Set(["text", "action", "brand"]);
+const VISUAL_GROUPS = new Set(["background", "image"]);
+
+function yStr(v, indent) {
+  const str = String(v ?? "");
+  if (!str.includes("\n")) return JSON.stringify(str); // JSON strings are valid YAML scalars
+  return "|\n" + str.split("\n").map((l) => " ".repeat(indent) + l).join("\n");
+}
+
+export function contentYaml(doc) {
+  const { width: W, height: H } = doc.source;
+  const els = ordered(doc.elements).numbered;
+  const isContent = (el) => el.content && (CONTENT_GROUPS.has(groupOf(el)) || el.role === "badge");
+  const isVisual = (el) => el.content && !isContent(el) && (VISUAL_GROUPS.has(groupOf(el)) || ["shape", "decoration"].includes(el.role));
+  const out = [
+    `# design-anatomy content — ${doc.source.path ? basename(doc.source.path) : "untitled"}`,
+    "source:",
+    `  size: ${W}x${H}`,
+    `  width: ${W}`,
+    `  height: ${H}`,
+    `  aspect: ${JSON.stringify(aspect(W, H))}`,
+    `  type: ${doc.source.type ?? "other"}`,
+    "content:  # reading order",
+  ];
+  for (const el of els.filter(isContent)) {
+    out.push(`  - type: ${el.role}${el.label ? `  # ${el.label}` : ""}`, `    value: ${yStr(el.content, 6)}`);
+  }
+  const vis = els.filter(isVisual);
+  if (vis.length) {
+    out.push("visuals:");
+    for (const el of vis) out.push(`  - type: ${el.role}`, `    value: ${yStr(el.content, 6)}`);
+  }
+  return out.join("\n") + "\n";
+}
+
+export function tasteMarkdown(doc) {
+  const t = doc.taste;
+  if (!t) return null;
+  const { width: W, height: H } = doc.source;
+  const L = [`# Taste — ${doc.source.path ? basename(doc.source.path) : "untitled"}`, ""];
+  L.push(`> ${W} × ${H} px · ${aspect(W, H)} · ${doc.source.type ?? "design"}`, "");
+  if (t.prompt) L.push("## Prompt (EN)", "", "```", t.prompt, "```", "");
+  if (t.prompt_ja) L.push("## プロンプト（日本語）", "", "```", t.prompt_ja, "```", "");
+  if (t.keywords?.length) L.push("## Keywords", "", t.keywords.map((k) => `\`${k}\``).join(" "), "");
+  if (t.palette?.length) {
+    L.push("## Palette", "", "| hex | name | use |", "|---|---|---|");
+    t.palette.forEach((p) => L.push(`| \`${p.hex}\` | ${p.name ?? ""} | ${p.use ?? ""} |`));
+    L.push("");
+  }
+  const facets = [["Typography", t.typography], ["Imagery", t.imagery], ["Texture / finish", t.texture], ["Mood", t.mood], ["References", t.references?.join(", ")]];
+  const present = facets.filter(([, v]) => v);
+  if (present.length) { L.push("## Facets", ""); present.forEach(([k, v]) => L.push(`- **${k}**: ${v}`)); L.push(""); }
+  if (t.assets?.length) {
+    L.push("## Asset prompts", "");
+    t.assets.forEach((a) => L.push(`### ${a.target ?? "asset"}`, "", "```", a.prompt, "```", ""));
+  }
+  if (t.negative) L.push("## Negative", "", "```", t.negative, "```", "");
+  return L.join("\n");
 }
 
 // legend() was laid out at y=0; move it down to the legend block.
@@ -533,6 +634,18 @@ if (isMain) {
     writeFileSync(out, svg);
     process.stdout.write(out + "\n");
     if (opt.png) process.stdout.write(rasterize(out, out.replace(/\.svg$/i, ".png")) + "\n");
+  } else if (cmd === "brief") {
+    if (!pos[0]) die("usage: brief <anatomy.json>");
+    const jsonPath = resolve(pos[0]);
+    const doc = JSON.parse(readFileSync(jsonPath, "utf8"));
+    const { errs } = validate(doc);
+    if (errs.length) die("invalid anatomy:\n  - " + errs.join("\n  - "));
+    const base = jsonPath.replace(/\.json$/i, "").replace(/\.anatomy$/i, "");
+    writeFileSync(`${base}.content.yaml`, contentYaml(doc));
+    process.stdout.write(`${base}.content.yaml\n`);
+    const md = tasteMarkdown(doc);
+    if (md) { writeFileSync(`${base}.taste.md`, md); process.stdout.write(`${base}.taste.md\n`); }
+    else process.stderr.write("warn: no `taste` in the anatomy — taste.md skipped.\n");
   } else if (cmd === "coverage") {
     if (!pos[1]) die("usage: coverage <anatomy.json> <ocr.json> [--apply]");
     const doc = JSON.parse(readFileSync(pos[0], "utf8"));
@@ -555,6 +668,6 @@ if (isMain) {
     process.stdout.write(errs.length ? "invalid\n" : "ok\n");
     process.exit(errs.length ? 1 : 0);
   } else {
-    die("commands: probe | ocr | coverage | validate | render");
+    die("commands: probe | ocr | coverage | validate | render | brief");
   }
 }
