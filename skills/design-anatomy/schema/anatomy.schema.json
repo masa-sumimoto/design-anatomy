@@ -31,11 +31,11 @@
             "enum": [
               "background",
               "headline", "subheadline", "body", "caption", "price", "date", "label", "copy", "other-text",
-              "eyebrow", "heading", "info", "list", "note", "credit", "hashtag", "handle", "rating",
+              "eyebrow", "heading", "info", "list", "note", "credit", "hashtag", "handle", "rating", "target", "lead-in",
               "illustration", "photo", "product", "icon", "character", "other-image", "qr", "avatar", "map",
               "cta", "button", "link", "input", "chip",
               "logo",
-              "badge", "decoration", "shape", "divider",
+              "badge", "benefit", "decoration", "shape", "divider",
               "frame", "container", "card", "nav", "header", "statusbar", "tabbar",
               "other"
             ]

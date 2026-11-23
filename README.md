@@ -31,7 +31,7 @@ npx skills add masa-sumimoto/design-anatomy
 
 Or copy `skills/design-anatomy/` into your agent's skills directory (e.g. `~/.claude/skills/`, `~/.codex/skills/`).
 
-Requirements: Node ≥ 18. Optional: macOS (Vision OCR, Japanese-ready) or `tesseract`; `rsvg-convert` or Chrome for PNG output.
+Requirements: Node ≥ 18. Optional: macOS (Vision OCR, Japanese-ready) or `tesseract`; ImageMagick for `palette`; `rsvg-convert` or Chrome for PNG output.
 
 ## Usage / 使い方
 
@@ -47,6 +47,7 @@ Or run the script directly:
 S=skills/design-anatomy/scripts/anatomy.mjs
 node $S probe banner.png
 node $S ocr banner.png > banner.ocr.json
+node $S palette banner.png                               # sRGB dominant colors (needs ImageMagick)
 node $S coverage banner.anatomy.json banner.ocr.json   # OCR text no element covers
 node $S validate banner.anatomy.json
 node $S render banner.anatomy.json --png                 # sheet
@@ -69,11 +70,11 @@ See [examples/](examples/) for a full set.
 | group | roles |
 |---|---|
 | Background | `background` |
-| Text | `headline` `subheadline` `eyebrow` `heading` `body` `list` `info` `price` `date` `label` `caption` `note` `credit` `hashtag` `handle` `rating` `copy` · `other-text` |
+| Text | `headline` `subheadline` `eyebrow` `heading` `body` `list` `info` `price` `date` `label` `caption` `note` `credit` `hashtag` `handle` `rating` `target` `lead-in` `copy` · `other-text` |
 | Image | `photo` `illustration` `product` `character` `icon` `avatar` `qr` `map` · `other-image` |
 | Action | `cta` `button` `link` `input` `chip` |
 | Brand | `logo` |
-| Decoration | `badge` `shape` `divider` `decoration` |
+| Decoration | `badge` `benefit` `shape` `divider` `decoration` |
 | Container | `frame` `card` `container` `header` `nav` `statusbar` `tabbar` |
 
 Elements the agent can't classify become `other-text` / `other-image` (dashed outline). `coverage` flags OCR text that no element accounts for.

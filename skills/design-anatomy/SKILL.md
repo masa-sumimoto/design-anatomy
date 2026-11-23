@@ -45,11 +45,11 @@ View the image yourself and assign each meaningful element a **role**. Roles by 
 | group | roles |
 |---|---|
 | Background | `background` |
-| Text | `headline` `subheadline` `eyebrow` `heading` `body` `list` `info` `price` `date` `label` `caption` `note` `credit` `hashtag` `handle` `rating` `copy` · `other-text` |
+| Text | `headline` `subheadline` `eyebrow` `heading` `body` `list` `info` `price` `date` `label` `caption` `note` `credit` `hashtag` `handle` `rating` `target` `lead-in` `copy` · `other-text` |
 | Image | `photo` `illustration` `product` `character` `icon` `avatar` `qr` `map` · `other-image` |
 | Action | `cta` `button` `link` `input` `chip` |
 | Brand | `logo` |
-| Decoration | `badge` `shape` `divider` `decoration` |
+| Decoration | `badge` `benefit` `shape` `divider` `decoration` |
 | Container | `frame` `card` `container` `header` `nav` `statusbar` `tabbar` |
 | Fallback | `other` |
 
@@ -107,7 +107,7 @@ Should cover:
 | `prompt` | English, one paragraph, image-model friendly: style/genre/era → color mood → type character → imagery medium → texture/finish → mood. |
 | `prompt_ja` | The same in Japanese. |
 | `keywords` | 5–8 short tags. |
-| `palette` | 3–6 colors: `hex`, an evocative `name`, and `use` (ground, type, accent...). |
+| `palette` | 3–6 colors: `hex`, an evocative `name`, and `use` (ground, type, accent...). **Measure, don't guess**: `node scripts/anatomy.mjs palette <image>` (dominant colors, converted to sRGB — phone screenshots are often Display P3) and `--region x,y,w,h` for a text color. |
 | `typography` | Classification, weight, contrast, spacing, feel — never the words. |
 | `imagery` | Photo/illustration medium, rendering style, lighting. |
 | `texture` / `mood` | Surface & finish; emotional tone. |

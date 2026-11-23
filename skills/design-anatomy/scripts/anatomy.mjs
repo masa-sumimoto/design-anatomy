@@ -4,6 +4,7 @@
 //   node anatomy.mjs probe  <image>                      -> {"width","height","format"}
 //   node anatomy.mjs ocr    <image> [--engine auto|vision|tesseract] [--lang jpn+eng]
 //                                                        -> {"engine","lines":[{text,bbox,conf}]}
+//   node anatomy.mjs palette  <image> [--colors 10] [--region x,y,w,h]  -> sRGB-converted dominant colors
 //   node anatomy.mjs coverage <anatomy.json> <ocr.json> [--apply]   -> OCR text no element accounts for
 //   node anatomy.mjs brief    <anatomy.json>   -> <name>.content.yaml + <name>.taste.md
 //   node anatomy.mjs validate <anatomy.json>
@@ -12,7 +13,7 @@
 // The agent (Claude / Codex / Gemini ...) does the *understanding* (roles, reading order).
 // This script only does the deterministic parts: measuring, OCR, and drawing.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { dirname, resolve, extname, basename, join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -154,12 +155,12 @@ const ROLE_GROUP = {
   headline: "text", subheadline: "text", body: "text", caption: "text",
   price: "text", date: "text", label: "text", copy: "text", "other-text": "text",
   eyebrow: "text", heading: "text", info: "text", list: "text", note: "text", credit: "text",
-  hashtag: "text", handle: "text", rating: "text",
+  hashtag: "text", handle: "text", rating: "text", target: "text", "lead-in": "text",
   illustration: "image", photo: "image", product: "image", icon: "image", character: "image", "other-image": "image",
   qr: "image", avatar: "image", map: "image",
   cta: "action", button: "action", link: "action", input: "action", chip: "action",
   logo: "brand",
-  badge: "decoration", decoration: "decoration", shape: "decoration", divider: "decoration",
+  badge: "decoration", benefit: "decoration", decoration: "decoration", shape: "decoration", divider: "decoration",
   frame: "container", container: "container", card: "container", nav: "container",
   header: "container", statusbar: "container", tabbar: "container",
 };
@@ -179,7 +180,7 @@ const FONT = `'Hiragino Sans','Noto Sans JP','Yu Gothic',system-ui,sans-serif`;
 const MONO = `ui-monospace,'SFMono-Regular',Menlo,monospace`;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const DISPLAY = { cta: "CTA", qr: "QR code", subheadline: "Sub headline", statusbar: "Status bar", tabbar: "Tab bar", "other-text": "Other text", "other-image": "Other image" };
+const DISPLAY = { "lead-in": "Lead-in", cta: "CTA", qr: "QR code", subheadline: "Sub headline", statusbar: "Status bar", tabbar: "Tab bar", "other-text": "Other text", "other-image": "Other image" };
 // "other-*" = recognised as text/image but its role couldn't be decided -> dashed outline.
 const isUnclassified = (el) => el.role === "other" || el.role?.startsWith("other-");
 const title = (s) => DISPLAY[s] ?? s.charAt(0).toUpperCase() + s.slice(1);
@@ -244,7 +245,7 @@ function glyph(el, g, x, y, w, h) {
     out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="${c}" fill-opacity=".06" stroke="${c}" stroke-width="1.5" stroke-dasharray="6 4"/>`);
     return out.join("");
   }
-  if (el.role === "badge") {
+  if (el.role === "badge" || el.role === "benefit") {
     const rx = Math.min(w, h) / 2;
     out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${r1(rx)}" fill="${c}" fill-opacity=".22" stroke="${c}" stroke-width="1.5"/>`);
     const bar = Math.max(2, Math.min(h * 0.18, 10));
@@ -336,7 +337,7 @@ function legend(doc, ox, oy, width) {
   const colW = (width - (cols - 1) * 32) / cols;
   const rowH = 30;
   const perCol = Math.ceil(numbered.length / cols);
-  const maxChars = Math.floor((colW - 190) / 12);
+  const maxChars = Math.floor((colW - 250) / 12);
   const parts = [];
   numbered.forEach((el, i) => {
     const col = Math.floor(i / perCol), row = i % perCol;
@@ -345,18 +346,22 @@ function legend(doc, ox, oy, width) {
     const c = GROUP_STYLE[g].color;
     parts.push(`<line x1="${x}" y1="${y + rowH - 4}" x2="${r1(x + colW)}" y2="${y + rowH - 4}" stroke="#ECECF0"/>`);
     parts.push(badge(el.n, x + 11, y + 11, c));
-    parts.push(`<text x="${x + 30}" y="${y + 15}" font-family="${FONT}" font-size="12" font-weight="700" fill="#1C1C22">${esc(clip(el.label ?? title(el.role), 14))}</text>`);
-    parts.push(`<text x="${x + 140}" y="${y + 15}" font-family="${MONO}" font-size="10" fill="${c}">${esc(GROUP_STYLE[g].name)}</text>`);
+    parts.push(`<text x="${x + 30}" y="${y + 15}" font-family="${FONT}" font-size="12" font-weight="700" fill="#1C1C22">${esc(clip(el.label ?? title(el.role), 17))}</text>`);
+    parts.push(`<text x="${x + 165}" y="${y + 15}" font-family="${MONO}" font-size="10" fill="${c}">${esc(GROUP_STYLE[g].name)}</text>`);
     const body = el.content ? clip(String(el.content).replace(/\n/g, " / "), maxChars) : "";
-    parts.push(`<text x="${x + 220}" y="${y + 15}" font-family="${FONT}" font-size="12" fill="#55555E">${esc(body)}</text>`);
+    parts.push(`<text x="${x + 250}" y="${y + 15}" font-family="${FONT}" font-size="12" fill="#55555E">${esc(body)}</text>`);
   });
   return { svg: parts.join("\n"), height: perCol * rowH };
 }
 
+// Exact small ratio ("4:5"), else the nearest common ratio within 1.5% ("≈1:1"), else decimal.
+const COMMON_RATIOS = [[1, 1], [4, 5], [5, 4], [3, 4], [4, 3], [2, 3], [3, 2], [9, 16], [16, 9], [1.91, 1], [1, 1.91], [2, 1], [1, 2], [3, 1]];
 export function aspect(w, h) {
   const gcd = (a, b) => (b ? gcd(b, a % b) : a);
   const g = gcd(w, h);
   if (w / g <= 32 && h / g <= 32) return `${w / g}:${h / g}`;
+  const near = COMMON_RATIOS.find(([a, b]) => Math.abs(w / h / (a / b) - 1) <= 0.015);
+  if (near) return `≈${near[0]}:${near[1]}`;
   return w >= h ? `${(w / h).toFixed(2)}:1` : `1:${(h / w).toFixed(2)}`;
 }
 
@@ -478,7 +483,7 @@ function yStr(v, indent) {
 export function contentYaml(doc) {
   const { width: W, height: H } = doc.source;
   const els = ordered(doc.elements).numbered;
-  const isContent = (el) => el.content && (CONTENT_GROUPS.has(groupOf(el)) || el.role === "badge");
+  const isContent = (el) => el.content && (CONTENT_GROUPS.has(groupOf(el)) || ["badge", "benefit"].includes(el.role));
   const isVisual = (el) => el.content && !isContent(el) && (VISUAL_GROUPS.has(groupOf(el)) || ["shape", "decoration"].includes(el.role));
   const out = [
     `# design-anatomy content — ${doc.source.path ? basename(doc.source.path) : "untitled"}`,
@@ -561,6 +566,46 @@ export function rasterize(svgPath, pngPath) {
 }
 
 // ---------------------------------------------------------------------------
+// palette: dominant colors, converted to sRGB first.
+// Phone screenshots are often Display P3; reading their raw numbers as sRGB gives
+// visibly duller hex values. Needs ImageMagick (`magick`).
+// ---------------------------------------------------------------------------
+const SRGB_ICC = [
+  "/System/Library/ColorSync/Profiles/sRGB Profile.icc",
+  "/usr/share/color/icc/colord/sRGB.icc",
+  "/usr/share/color/icc/sRGB.icc",
+  "/usr/share/color/icc/ghostscript/srgb.icc",
+];
+
+export function palette(file, { colors = 10, region } = {}) {
+  if (!has("magick")) die("palette needs ImageMagick (`magick`).");
+  const icc = execFileSync("magick", ["identify", "-format", "%[icc:description]", resolve(file)], { encoding: "utf8" }).trim();
+  const srgb = SRGB_ICC.find((p) => existsSync(p));
+  const needsConvert = icc && !/srgb/i.test(icc);
+  const args = [resolve(file)];
+  let note;
+  if (needsConvert && srgb) args.push("-profile", srgb);
+  else if (needsConvert) note = `image is ${icc} but no sRGB ICC profile was found; values are unconverted`;
+  if (region) {
+    const [x, y, w, h] = String(region).split(",").map(Number);
+    args.push("-crop", `${w}x${h}+${x}+${y}`, "+repage");
+  }
+  args.push("-resize", "400x400>", "+dither", "-colors", String(region ? Math.min(colors, 3) : colors), "-format", "%c", "histogram:info:-");
+  const out = execFileSync("magick", args, { encoding: "utf8" });
+  const rows = out.trim().split("\n").map((l) => {
+    const m = l.match(/^\s*(\d+):.*?(#[0-9A-F]{6})/i);
+    return m && { count: +m[1], hex: m[2].toUpperCase() };
+  }).filter(Boolean).sort((a, b) => b.count - a.count);
+  const total = rows.reduce((n, r) => n + r.count, 0) || 1;
+  return {
+    colorspace: needsConvert && srgb ? `${icc} → sRGB` : icc || "sRGB (assumed)",
+    ...(region ? { region, hint: "In a text region the 2nd color is usually the text color." } : {}),
+    colors: rows.map((r) => ({ hex: r.hex, share: +(r.count / total).toFixed(3) })),
+    ...(note ? { note } : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // coverage: OCR lines that no element accounts for -> candidates for "other-text"
 // ---------------------------------------------------------------------------
 function overlapRatio(a, b) {
@@ -611,7 +656,10 @@ export function validate(doc) {
 // ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
-const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+// Compare real paths: skills are often installed as symlinks (~/.claude/skills/x -> repo),
+// and argv[1] keeps the link path while import.meta.url resolves to the target.
+const real = (p) => { try { return realpathSync(p); } catch { return resolve(p); } };
+const isMain = process.argv[1] && real(process.argv[1]) === real(fileURLToPath(import.meta.url));
 if (isMain) {
   const [cmd, ...rest] = process.argv.slice(2);
   const { pos, opt } = parseArgs(rest);
@@ -634,6 +682,9 @@ if (isMain) {
     writeFileSync(out, svg);
     process.stdout.write(out + "\n");
     if (opt.png) process.stdout.write(rasterize(out, out.replace(/\.svg$/i, ".png")) + "\n");
+  } else if (cmd === "palette") {
+    if (!pos[0]) die("usage: palette <image> [--colors 10] [--region x,y,w,h]");
+    process.stdout.write(JSON.stringify(palette(pos[0], { colors: opt.colors ? +opt.colors : 10, region: opt.region }), null, 2) + "\n");
   } else if (cmd === "brief") {
     if (!pos[0]) die("usage: brief <anatomy.json>");
     const jsonPath = resolve(pos[0]);
@@ -668,6 +719,6 @@ if (isMain) {
     process.stdout.write(errs.length ? "invalid\n" : "ok\n");
     process.exit(errs.length ? 1 : 0);
   } else {
-    die("commands: probe | ocr | coverage | validate | render | brief");
+    die("commands: probe | ocr | palette | coverage | validate | render | brief");
   }
 }

@@ -16,6 +16,8 @@ Pick the most specific role that fits; when two fit, prefer the one that says *w
 | `headline` | the largest, first-read copy. One per design (UI: the page title). | 「ひんやり黒糖ラテ」 |
 | `subheadline` | copy that directly supports the headline: a second line, a translation, a tagline. | "Coffee & the morning of the town" |
 | `eyebrow` | small text placed *above* the headline that frames it: event/series name, category, kicker. | 「CITY COFFEE WEEK」, 「NEW ARRIVAL」 |
+| `target` | who the design is for, often a row of short tags separated by bars or slashes. | 「20〜30代｜在宅｜未経験OK」 |
+| `lead-in` | a short line that sets up the next message, often framed by speech marks (＼ ／) or brackets. Common in Japanese ads. | 「＼ 〇〇なら ／」 |
 | `heading` | a section title inside the design (not the main headline). | UI の「おすすめ」 |
 | `body` | explanatory sentences. | 「沖縄産黒糖のやさしい甘さ。」 |
 | `list` | enumerated items: steps, bullet points, features. Use `lines` for the item count. | ① フォロー ② いいね ③ コメント |
@@ -67,6 +69,7 @@ Pick the most specific role that fits; when two fit, prefer the one that says *w
 | role | use for |
 |---|---|
 | `badge` | a shape carrying a short message: ribbons, seals, starbursts, pills. Put its text in `content`. |
+| `benefit` | a shape (often one of a repeated set of circles or cards) that states a feature, merit or proof point: "送料無料", "満足度98%". Put its text in `content`. |
 | `shape` | background shapes that organize the layout (circles, blobs, color blocks). |
 | `divider` | rules and separators. |
 | `decoration` | ornaments with no message (sparkles, patterns). |
